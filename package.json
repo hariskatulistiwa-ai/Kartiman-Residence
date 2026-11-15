@@ -1,0 +1,23 @@
+{
+  "name": "graduation-aufa",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Website wisuda digital (mobile) + panel admin: cover, cerita, terima kasih, virtual photobooth, live greetings.",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "alpinejs": "^3.17.5",
+    "express": "^4.22.3",
+    "gsap": "^3.15.1",
+    "multer": "^2.5.0",
+    "three": "^0.187.0"
+  }
+}

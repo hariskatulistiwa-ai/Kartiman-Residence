@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>Panel Admin • Graduation</title>
+  <link rel="icon" type="image/png" href="/assets/logo-mark.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Great+Vibes&family=Mulish:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/admin/admin.css" />
+  <script type="module" src="/admin/admin.js"></script>
+  <script defer src="/vendor/alpine/cdn.min.js"></script>
+</head>
+<body x-data="adminApp()" x-init="init()" :class="{ 'is-login': !authed }">
+  <!-- ============ LOGIN ============ -->
+  <template x-if="!authed && ready">
+    <main class="login">
+      <form class="login-card" @submit.prevent="login()">
+        <img src="/assets/logo-mark.webp" alt="" />
+        <h1>Panel Admin</h1>
+        <p>Kelola website wisuda digital</p>
+        <label class="fld"><span>Kata sandi</span><input type="password" x-model="password" autofocus autocomplete="current-password" placeholder="••••••••" /></label>
+        <p class="err" x-show="loginError" x-text="loginError"></p>
+        <button class="btn primary wide" :disabled="busy"><span x-text="busy ? 'Memeriksa…' : 'Masuk'"></span></button>
+        <a class="muted small" href="/" target="_blank">← Lihat website</a>
+      </form>
+    </main>
+  </template>
+
+  <!-- ============ APP ============ -->
+  <template x-if="authed">
+    <div class="shell">
+      <aside class="side">
+        <div class="brand"><img src="/assets/logo-mark.webp" alt="" /><div><b>Graduation</b><small x-text="settings.fullName"></small></div></div>
+        <nav>
+          <template x-for="t in tabs" :key="t.id">
+            <button :class="{ on: tab === t.id }" @click="setTab(t.id)"><span class="ic" x-html="t.icon"></span><span x-text="t.label"></span><em x-show="t.id==='greetings' && stats.realGreetings" x-text="stats.realGreetings"></em></button>
+          </template>
+        </nav>
+        <div class="side-foot">
+          <a class="btn ghost wide" href="/" target="_blank">Buka website ↗</a>
+          <button class="btn ghost wide" @click="logout()">Keluar</button>
+        </div>
+      </aside>
+
+      <main class="main">
+        <!-- ---------- DASHBOARD ---------- -->
+        <section x-show="tab==='dashboard'">
+          <header class="head"><div><h2>Dashboard</h2><p>Ringkasan website wisuda <b x-text="settings.fullName + ' ' + settings.degree"></b></p></div>
+            <button class="btn ghost" @click="loadStats()">↻ Muat ulang</button></header>
+          <div class="note warn" x-show="defaultPassword">⚠️ Anda masih memakai kata sandi bawaan <code>wisuda2026</code>. Ubah dengan menjalankan server memakai variabel lingkungan <code>ADMIN_PASSWORD</code>.</div>
+          <div class="note" x-show="stats.samples">Terdapat <b x-text="stats.samples"></b> ucapan contoh (foto contoh dari desain). <button class="link" @click="deleteSamples()">Hapus semua contoh</button></div>
+          <div class="stats">
+            <div class="stat"><small>Total ucapan (asli)</small><b x-text="stats.realGreetings ?? 0"></b></div>
+            <div class="stat"><small>Ucapan hari ini</small><b x-text="stats.today ?? 0"></b></div>
+            <div class="stat"><small>Total suka ❤</small><b x-text="stats.likes ?? 0"></b></div>
+            <div class="stat"><small>Pengunjung live</small><b x-text="stats.live ?? 0"></b></div>
+            <div class="stat"><small>Cerita</small><b x-text="stats.stories ?? 0"></b></div>
+            <div class="stat"><small>Ucapan terima kasih</small><b x-text="stats.thanks ?? 0"></b></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>Tautan untuk dibagikan</h3></div>
+            <div class="share-row"><input readonly :value="siteUrl" @focus="$event.target.select()" /><button class="btn primary" @click="copy(siteUrl)">Salin</button></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3>Ucapan terbaru</h3><button class="link" @click="setTab('greetings')">Lihat semua →</button></div>
+            <div class="mini-list">
+              <template x-for="g in stats.latest || []" :key="g.id">
+                <div class="mini"><img :src="g.thumb || g.photo" alt="" /><div><b x-text="g.name"></b><p x-text="g.message"></p><small x-text="fmtDate(g.createdAt)"></small></div></div>
+              </template>
+            </div>
+          </div>
+        </section>
+
+        <!-- ---------- GREETINGS ---------- -->
+        <section x-show="tab==='greetings'">
+          <header class="head"><div><h2>Live Greetings</h2><p>Semua foto &amp; ucapan dari photobooth. Tampil langsung di website tanpa persetujuan — di sini Anda bisa mengedit, menyembunyikan, atau menghapus.</p></div>
+            <div class="row gap"><button class="btn ghost" @click="openGreeting()">+ Tambah manual</button><button class="btn ghost danger" x-show="stats.samples" @click="deleteSamples()">Hapus contoh</button></div></header>
+          <div class="toolbar"><input type="search" placeholder="Cari nama atau ucapan…" x-model.debounce.300ms="gq" @input.debounce.300ms="loadGreetings()" />
+            <select x-model="gfilter"><option value="all">Semua</option><option value="visible">Tampil</option><option value="hidden">Disembunyikan</option><option value="sample">Contoh</option></select></div>
+          <p class="muted small" x-text="filteredGreetings.length + ' ucapan'"></p>
+          <div class="g-grid">
+            <template x-for="g in filteredGreetings" :key="g.id">
+              <article class="g-item" :class="{ hidden: g.hidden }">
+                <a :href="g.photo" target="_blank" class="g-ph"><img :src="g.thumb || g.photo" loading="lazy" alt="" /><span class="tag" x-show="g.sample">Contoh</span><span class="tag dark" x-show="g.hidden">Disembunyikan</span></a>
+                <div class="g-body">
+                  <b x-text="g.name"></b>
+                  <p x-text="g.message"></p>
+                  <small x-text="fmtDate(g.createdAt) + ' • ❤ ' + (g.likes||0)"></small>
+                </div>
+                <div class="g-act">
+                  <button class="btn sm ghost" @click="openGreeting(g)">Edit</button>
+                  <button class="btn sm ghost" @click="toggleHidden(g)" x-text="g.hidden ? 'Tampilkan' : 'Sembunyikan'"></button>
+                  <a class="btn sm ghost" :href="g.photo" download>Unduh</a>
+                  <button class="btn sm ghost danger" @click="removeGreeting(g)">Hapus</button>
+                </div>
+              </article>
+            </template>
+          </div>
+          <p class="empty" x-show="!filteredGreetings.length">Belum ada ucapan.</p>
+        </section>
+
+        <!-- ---------- STORIES ---------- -->
+        <section x-show="tab==='stories'">
+          <header class="head"><div><h2>Cerita Perjalanan</h2><p>Timeline “Jejak langkahku”: awal kuliah, sempro, KKN, sidang, wisuda, dll. Urutkan dengan tombol panah.</p></div>
+            <button class="btn primary" @click="openStory()">+ Tambah cerita</button></header>
+          <div class="list">
+            <template x-for="(s, i) in stories" :key="s.id">
+              <article class="item" :class="{ off: !s.visible }">
+                <div class="order"><button @click="move('stories', i, -1)" :disabled="i===0">▲</button><b x-text="i+1"></b><button @click="move('stories', i, 1)" :disabled="i===stories.length-1">▼</button></div>
+                <img class="thumb" :src="img(s.images[0])" alt="" />
+                <div class="grow"><b x-text="s.title"></b> <span class="tag" x-show="!s.visible">Disembunyikan</span><p x-text="s.text"></p><small x-text="(s.images||[]).length + ' foto' + (s.date ? ' • ' + s.date : '')"></small></div>
+                <div class="act"><button class="btn sm ghost" @click="openStory(s)">Edit</button><button class="btn sm ghost danger" @click="removeItem('stories', s)">Hapus</button></div>
+              </article>
+            </template>
+          </div>
+        </section>
+
+        <!-- ---------- THANKS ---------- -->
+        <section x-show="tab==='thanks'">
+          <header class="head"><div><h2>Ucapan Terima Kasih</h2><p>Kartu “Untuk kalian, sepenuh hati” — Ayah &amp; Mama, keluarga, teman, dosen, dan semua yang hadir.</p></div>
+            <button class="btn primary" @click="openThanks()">+ Tambah</button></header>
+          <div class="list">
+            <template x-for="(t, i) in thanks" :key="t.id">
+              <article class="item" :class="{ off: !t.visible }">
+                <div class="order"><button @click="move('thanks', i, -1)" :disabled="i===0">▲</button><b x-text="i+1"></b><button @click="move('thanks', i, 1)" :disabled="i===thanks.length-1">▼</button></div>
+                <span class="badge-ic" x-html="icon(t.icon)"></span>
+                <div class="grow"><b x-text="t.title"></b> <span class="tag" x-show="!t.visible">Disembunyikan</span><p x-text="t.text"></p></div>
+                <div class="act"><button class="btn sm ghost" @click="openThanks(t)">Edit</button><button class="btn sm ghost danger" @click="removeItem('thanks', t)">Hapus</button></div>
+              </article>
+            </template>
+          </div>
+        </section>
+
+        <!-- ---------- FRAMES ---------- -->
+        <section x-show="tab==='frames'">
+          <header class="head"><div><h2>Bingkai Photobooth</h2><p>Atur nama, aktif/nonaktif, urutan, dan tulisan pada bingkai.</p></div>
+            <button class="btn primary" @click="saveFrames()" :disabled="busy">Simpan bingkai</button></header>
+          <div class="card">
+            <label class="fld"><span>Tulisan pada bingkai</span><input x-model="settings.frameCaption" @input.debounce.400ms="drawFrames()" /></label>
+            <label class="fld"><span>Gaya header halaman bingkai</span>
+              <select x-model="settings.boothHeaderStyle"><option value="graduation">Happy Graduation</option><option value="undangan">Undangan Digital Wisuda</option></select></label>
+            <div class="seg-mini"><button :class="{on: framePreviewMode==='single'}" @click="framePreviewMode='single'; drawFrames()">Pratinjau Single</button><button :class="{on: framePreviewMode==='collage'}" @click="framePreviewMode='collage'; drawFrames()">Pratinjau Kolase</button></div>
+          </div>
+          <div class="frames">
+            <template x-for="(f, i) in frames" :key="f.id">
+              <article class="frame-card" :class="{ off: !f.enabled }">
+                <canvas :data-frame="f.id"></canvas>
+                <label class="fld"><span>Nama</span><input x-model="f.label" /></label>
+                <div class="row between">
+                  <label class="switch"><input type="checkbox" x-model="f.enabled" /><span></span> Aktif</label>
+                  <div class="order inline"><button @click="move('frames', i, -1, false); $nextTick(() => drawFrames())" :disabled="i===0">◀</button><button @click="move('frames', i, 1, false); $nextTick(() => drawFrames())" :disabled="i===frames.length-1">▶</button></div>
+                </div>
+              </article>
+            </template>
+          </div>
+        </section>
+
+        <!-- ---------- SETTINGS ---------- -->
+        <section x-show="tab==='settings'">
+          <header class="head"><div><h2>Konten &amp; Tampilan</h2><p>Semua teks di website, foto wisudawan, logo, dan musik.</p></div>
+            <button class="btn primary" @click="saveSettings()" :disabled="busy">Simpan perubahan</button></header>
+          <div class="card">
+            <div class="card-head"><h3>Foto, logo &amp; musik</h3></div>
+            <div class="media-grid">
+              <div class="media">
+                <div class="prev checker"><img :src="settings.photoMain" alt="" /></div>
+                <b>Foto wisudawan</b><small>PNG/WebP latar transparan agar menyatu dengan desain.</small>
+                <label class="btn sm ghost file">Ganti foto<input type="file" accept="image/*" @change="uploadSetting('photoMain', $event)" /></label>
+              </div>
+              <div class="media">
+                <div class="prev checker"><img :src="settings.logoMark" alt="" /></div>
+                <b>Logo kampus</b><small>Lambang (tanpa teks) – PNG transparan.</small>
+                <label class="btn sm ghost file">Ganti logo<input type="file" accept="image/*" @change="uploadSetting('logoMark', $event)" /></label>
+              </div>
+              <div class="media">
+                <div class="prev round"><img x-show="settings.pianoImage" :src="settings.pianoImage" alt="" /><span x-show="!settings.pianoImage">🎹</span></div>
+                <b>Foto piano (indikator musik)</b><small>Opsional. Kosong = ikon piano emas.</small>
+                <div class="row gap"><label class="btn sm ghost file">Unggah<input type="file" accept="image/*" @change="uploadSetting('pianoImage', $event)" /></label><button class="btn sm ghost" x-show="settings.pianoImage" @click="settings.pianoImage=''">Hapus</button></div>
+              </div>
+              <div class="media">
+                <div class="prev music">♫</div>
+                <b>Musik latar</b><small>Diputar otomatis &amp; berulang (MP3/M4A/OGG).</small>
+                <audio controls :src="settings.music" preload="none"></audio>
+                <div class="row gap"><label class="btn sm ghost file">Ganti musik<input type="file" accept="audio/*" @change="uploadSetting('music', $event)" /></label><button class="btn sm ghost" @click="settings.music='/assets/music/piano-kenangan.mp3'">Musik bawaan</button></div>
+                <label class="fld"><span>Judul musik</span><input x-model="settings.musicTitle" /></label>
+              </div>
+            </div>
+          </div>
+          <template x-for="g in settingGroups" :key="g.title">
+            <div class="card">
+              <div class="card-head"><h3 x-text="g.title"></h3></div>
+              <div class="fields">
+                <template x-for="f in g.fields" :key="f[0]">
+                  <label class="fld" :class="{ full: f[2]==='area' }"><span x-text="f[1]"></span>
+                    <template x-if="f[2]==='area'"><textarea rows="3" x-model="settings[f[0]]"></textarea></template>
+                    <template x-if="f[2]!=='area'"><input x-model="settings[f[0]]" /></template>
+                  </label>
+                </template>
+              </div>
+            </div>
+          </template>
+          <div class="sticky-save"><button class="btn primary" @click="saveSettings()" :disabled="busy">Simpan perubahan</button></div>
+        </section>
+
+        <!-- ---------- BACKUP ---------- -->
+        <section x-show="tab==='backup'">
+          <header class="head"><div><h2>Cadangan Data</h2><p>Unduh semua data (teks, cerita, ucapan) sebagai file JSON. Foto tersimpan di folder <code>data/uploads</code> di server.</p></div></header>
+          <div class="card">
+            <div class="row gap wrap">
+              <a class="btn primary" href="/api/admin/backup">⬇ Unduh cadangan (.json)</a>
+              <label class="btn ghost file">⬆ Pulihkan dari cadangan<input type="file" accept="application/json" @change="restore($event)" /></label>
+            </div>
+            <p class="muted small">Memulihkan akan mengganti semua data saat ini dengan isi file cadangan.</p>
+          </div>
+        </section>
+      </main>
+
+      <!-- ---------- MODAL ---------- -->
+      <div class="modal" x-show="modal" x-transition.opacity @keydown.escape.window="modal=null">
+        <div class="modal-card" @click.outside="modal=null">
+          <!-- story -->
+          <template x-if="modal==='story'">
+            <form @submit.prevent="saveStory()">
+              <h3 x-text="form.id ? 'Edit cerita' : 'Tambah cerita'"></h3>
+              <label class="fld"><span>Judul (mis. Sempro, KKN, Sidang)</span><input x-model="form.title" required /></label>
+              <label class="fld"><span>Tanggal / keterangan waktu (opsional)</span><input x-model="form.date" placeholder="mis. Agustus 2022" /></label>
+              <label class="fld"><span>Cerita</span><textarea rows="4" x-model="form.text"></textarea></label>
+              <div class="fld"><span>Foto galeri (foto pertama tampil di timeline, sisanya di galeri)</span>
+                <div class="pics">
+                  <template x-for="(u, i) in form.images" :key="u + i">
+                    <div class="pic"><img :src="img(u)" alt="" /><div class="pic-act"><button type="button" @click="movePic(i,-1)" :disabled="i===0">◀</button><button type="button" @click="form.images.splice(i,1)">✕</button><button type="button" @click="movePic(i,1)" :disabled="i===form.images.length-1">▶</button></div></div>
+                  </template>
+                  <label class="pic add"><input type="file" accept="image/*" multiple @change="uploadStoryPics($event)" /><span x-text="uploading ? 'Mengunggah…' : '+ Foto'"></span></label>
+                </div>
+                <button type="button" class="link" @click="form.images.push('@graduate')">+ Pakai foto wisudawan</button>
+              </div>
+              <label class="switch"><input type="checkbox" x-model="form.visible" /><span></span> Tampilkan di website</label>
+              <div class="modal-act"><button type="button" class="btn ghost" @click="modal=null">Batal</button><button class="btn primary" :disabled="busy || uploading">Simpan</button></div>
+            </form>
+          </template>
+          <!-- thanks -->
+          <template x-if="modal==='thanks'">
+            <form @submit.prevent="saveThanks()">
+              <h3 x-text="form.id ? 'Edit ucapan terima kasih' : 'Tambah ucapan terima kasih'"></h3>
+              <label class="fld"><span>Untuk (mis. Ayah &amp; Mama)</span><input x-model="form.title" required /></label>
+              <label class="fld"><span>Ucapan</span><textarea rows="4" x-model="form.text"></textarea></label>
+              <div class="fld"><span>Ikon</span>
+                <div class="icon-pick">
+                  <template x-for="ic in thanksIconList" :key="ic.key">
+                    <button type="button" :class="{ on: form.icon===ic.key }" @click="form.icon=ic.key" :title="ic.label"><span x-html="icon(ic.key)"></span><small x-text="ic.label"></small></button>
+                  </template>
+                </div>
+              </div>
+              <label class="switch"><input type="checkbox" x-model="form.visible" /><span></span> Tampilkan di website</label>
+              <div class="modal-act"><button type="button" class="btn ghost" @click="modal=null">Batal</button><button class="btn primary" :disabled="busy">Simpan</button></div>
+            </form>
+          </template>
+          <!-- greeting -->
+          <template x-if="modal==='greeting'">
+            <form @submit.prevent="saveGreeting()">
+              <h3 x-text="form.id ? 'Edit ucapan' : 'Tambah ucapan'"></h3>
+              <div class="g-edit-ph"><img x-show="form.preview || form.photo" :src="form.preview || form.photo" alt="" /></div>
+              <label class="btn sm ghost file">Pilih / ganti foto<input type="file" accept="image/*" @change="pickGreetingPhoto($event)" /></label>
+              <label class="fld"><span>Nama</span><input x-model="form.name" required maxlength="60" /></label>
+              <label class="fld"><span>Ucapan</span><textarea rows="4" x-model="form.message" required maxlength="600"></textarea></label>
+              <label class="switch" x-show="form.id"><input type="checkbox" x-model="form.hidden" /><span></span> Sembunyikan dari website</label>
+              <div class="modal-act"><button type="button" class="btn ghost" @click="modal=null">Batal</button><button class="btn primary" :disabled="busy">Simpan</button></div>
+            </form>
+          </template>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <div class="toasts"><template x-for="t in toasts" :key="t.id"><div class="toast" :class="t.type" x-text="t.msg" x-transition></div></template></div>
+</body>
+</html>

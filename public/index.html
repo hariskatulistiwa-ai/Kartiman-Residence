@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0d3a2a" />
+  <title>{{TITLE}}</title>
+  <meta name="description" content="{{DESC}}" />
+  <meta property="og:title" content="{{TITLE}}" />
+  <meta property="og:description" content="{{DESC}}" />
+  <meta property="og:image" content="{{OG_IMAGE}}" />
+  <meta property="og:type" content="website" />
+  <link rel="icon" type="image/png" href="/assets/logo-mark.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&family=Great+Vibes&family=Mulish:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600;1,700&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="preload" as="image" href="/assets/graduate.webp" />
+  <link rel="stylesheet" href="/css/app.css" />
+</head>
+<body>
+  <!-- Preloader -->
+  <div id="preloader" aria-hidden="true">
+    <div class="pl-medal">
+      <div class="pl-ring"></div>
+      <img src="/assets/logo-mark.webp" alt="" />
+    </div>
+    <p class="pl-text">Menyiapkan kenangan<span class="dots"><i>.</i><i>.</i><i>.</i></span></p>
+    <div class="pl-bar"><i></i></div>
+  </div>
+
+  <!-- Partikel & 3D -->
+  <canvas id="fx" aria-hidden="true"></canvas>
+
+  <div id="app">
+    <main id="view" tabindex="-1"></main>
+  </div>
+
+  <!-- Navigasi bawah -->
+  <nav id="nav" class="bottom-nav" aria-label="Menu">
+    <span class="nav-pill" aria-hidden="true"></span>
+    <a href="#/cerita" data-route="cerita"><span class="ico" data-icon="book"></span><span>Cerita</span></a>
+    <i class="sep"></i>
+    <a href="#/terima-kasih" data-route="terima-kasih"><span class="ico" data-icon="heart"></span><span>Terima Kasih</span></a>
+    <i class="sep"></i>
+    <a href="#/photobooth" data-route="photobooth"><span class="ico" data-icon="camera"></span><span>Photobooth</span></a>
+    <i class="sep"></i>
+    <a href="#/live" data-route="live"><span class="ico" data-icon="live"></span><span>Live</span></a>
+  </nav>
+
+  <!-- Indikator musik (piano) – tanpa tombol mute -->
+  <div id="piano" aria-hidden="true">
+    <div class="piano-disc"><img alt="" /></div>
+    <div class="piano-notes"></div>
+  </div>
+  <audio id="bgm" loop preload="auto" playsinline></audio>
+
+  <!-- Tirai pembuka -->
+  <div id="curtain" aria-hidden="true">
+    <div class="c-left"></div>
+    <div class="c-right"></div>
+    <div class="c-medal"><img src="/assets/logo-mark.webp" alt="" /></div>
+  </div>
+
+  <div id="toasts" aria-live="polite"></div>
+  <div id="lightbox" hidden></div>
+
+  <script type="importmap">
+    { "imports": { "three": "/vendor/three/three.module.js" } }
+  </script>
+  <script src="/vendor/gsap/gsap.min.js"></script>
+  <script src="/vendor/gsap/ScrollTrigger.min.js"></script>
+  <script type="module" src="/js/main.js"></script>
+</body>
+</html>
